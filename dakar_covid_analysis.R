@@ -189,7 +189,7 @@ p$fixed.marginals
 p$hyper.marginals
 p$marginal.fitted
 
-##-------Posterior Prediction at EA level using the approaches
+##-------Posterior Prediction on test set
 
 index_code <- inla.stack.index(stk.dat12, "dat")$data #---extract the data location indices
 fit_covid <- exp(M12_fit$summary.linear.predictor[index_code,"mean"]) #--predicted mean count
