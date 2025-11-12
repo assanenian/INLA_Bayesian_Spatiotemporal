@@ -155,7 +155,38 @@ stk.pred <- inla.stack(data=list(y = df_pred$infection), A = list(A12_pred, 1), 
 stk_all <- inla.stack.join(stk.fit,stk.pred)
 
 
-## Formula for INLA model
+## Formula for INLA model (non-spatial)
+formula11_fit = y ~ 0 + Intercept +   
+  f(neigh_id_index, model = "iid",
+    hyper = list( prec = list( prior = "pc.prec", param = c(0.5, 0.01)))) +
+  f(rw1_month_all, model = "rw1", scale.model = T,
+    hyper = list(theta = list(prior = "pc.prec", param = c(1, 0.01)))) +
+  factor(month_number) +
+  mean_residential + 
+  mean_acs +
+  population_density +
+  built_density +
+  social_distancing_index +
+  #  mean_mkt +
+  mean_tmp
+#f(i, model = spde12)
+
+## Execute INLA
+M11_fit = inla(formula11_fit, family = 'zeroinflatedpoisson0',
+               control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE),
+               inla.mode = "experimental",
+               data = inla.stack.data(stk_all), verbose=TRUE, 
+               control.predictor = list(A = inla.stack.A(stk_all), compute = TRUE, link = 1))
+
+summary(M11_fit)
+
+p11 <- autoplot(M11_fit)
+p11$fixed.marginals
+p11$hyper.marginals
+p11$random.effects.line
+p11$marginal.fitted
+
+## Formula for INLA model (space-time)
 formula12_fit = y ~ 0 + Intercept +   
   f(neigh_id_index, model = "iid",
     hyper = list( prec = list( prior = "pc.prec", param = c(0.5, 0.01)))) +
@@ -166,28 +197,60 @@ formula12_fit = y ~ 0 + Intercept +
   mean_acs +
   population_density +
   built_density +
-  mean_mkt +
+  social_distancing_index +
+  #  mean_mkt +
   mean_tmp +
   f(i, model = spde12)
 
 
 ## Execute INLA
-M12_fit = inla(formula12_fit, family = 'zeroinflatedpoisson1',
+M12_fit = inla(formula12_fit, family = 'zeroinflatedpoisson0',
                control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE),
                inla.mode = "experimental",
                data = inla.stack.data(stk_all), verbose=TRUE, 
                control.predictor = list(A = inla.stack.A(stk_all), compute = TRUE, link = 1))
 
-
-
-
 summary(M12_fit)
 
-p <- autoplot(M12_fit)
-p$random.effects.line
-p$fixed.marginals
-p$hyper.marginals
-p$marginal.fitted
+p12 <- autoplot(M12_fit)
+p12$fixed.marginals
+p12$hyper.marginals
+p12$random.effects.line
+p12$marginal.fitted
+
+## Formula for INLA model (spatio-temporal)
+formula13_fit = y ~ 0 + Intercept +   
+  f(neigh_id_index, model = "iid",
+    hyper = list( prec = list( prior = "pc.prec", param = c(0.5, 0.01)))) +
+  f(rw1_month_all, model = "rw1", scale.model = T,
+    hyper = list(theta = list(prior = "pc.prec", param = c(1, 0.01)))) +
+  f(rw1_month_all_ii, model="iid",
+    hyper = list( prec = list( prior="pc.prec", param = c(0.5, 0.01)))) + # Spatiotemporal Interaction
+  factor(month_number) +
+  mean_residential + 
+  mean_acs +
+  population_density +
+  built_density +
+  social_distancing_index +
+  #  mean_mkt +
+  mean_tmp +
+  f(i, model = spde12)
+
+
+## Execute INLA
+M13_fit = inla(formula13_fit, family = 'zeroinflatedpoisson0',
+               control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE),
+               inla.mode = "experimental",
+               data = inla.stack.data(stk_all), verbose=TRUE, 
+               control.predictor = list(A = inla.stack.A(stk_all), compute = TRUE, link = 1))
+
+summary(M13_fit)
+
+p13 <- autoplot(M13_fit)
+p13$fixed.marginals
+p13$hyper.marginals
+p13$random.effects.line
+p13$marginal.fitted
 
 ##-------Posterior Prediction on test set
 
